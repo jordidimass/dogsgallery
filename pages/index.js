@@ -12,7 +12,7 @@ export default function Home() {
 
   const fetchDogs = useCallback(async () => {
     setLoading(true);
-    const response = await axios.get('https://dog.ceo/api/breeds/image/random/12');
+    const response = await axios.get('https://dog.ceo/api/breeds/image/random/30');
     setDogs((prevDogs) => [...prevDogs, ...response.data.message]);
     setLoading(false);
   }, []);
