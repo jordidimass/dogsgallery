@@ -74,13 +74,6 @@ export default function Home() {
               >
                 &times;
               </button>
-              {/* Download Button (Mobile Only) */}
-              <button
-                onClick={() => downloadImage(selectedDog)}
-                className="absolute right-4 top-20 text-white sm:text-black text-4xl font-bold bg-gray-800 sm:bg-gray-200 rounded-full w-12 h-12 sm:w-16 sm:h-16 flex items-center justify-center hover:bg-gray-700 sm:hover:bg-gray-300 z-30 block sm:hidden"
-              >
-                &#8681; {/* Unicode for download icon */}
-              </button>
               <img
                 src={selectedDog}
                 alt="Perrito ampliado"
