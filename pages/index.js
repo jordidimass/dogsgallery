@@ -31,11 +31,17 @@ export default function Home() {
     setIsOpen(false);
   };
 
+  const downloadImage = (url) => {
+    const link = document.createElement('a');
+    link.href = url;
+    link.setAttribute('download', 'perrito.jpg'); // You can customize the file name here
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
   return (
     <div className="font-sans text-center">
-      <header className="bg-green-500 text-white py-4">
-        <h1>¡Bienvenido a la página de perritos!</h1>
-      </header>
       <main className="p-4">
       <InfiniteScroll
         dataLength={dogs.length}
@@ -57,18 +63,28 @@ export default function Home() {
       </main>
       {selectedDog && (
         <Dialog open={isOpen} onClose={closeModal} className="fixed inset-0 z-10 overflow-y-auto">
-          <div className="flex items-center justify-center min-h-screen">
-            <div className="bg-white rounded-lg p-2 max-w-6xl w-full mx-4">
+          {/* Backdrop with blur and opacity */}
+          <div className="fixed inset-0 bg-black/50 backdrop-blur-sm" aria-hidden="true"></div>
+          {/* Modal content, no blur */}
+          <div className="relative flex items-center justify-center min-h-screen z-20">
+            <div className="bg-black w-full h-full sm:bg-white sm:rounded-lg sm:p-2 sm:max-w-6xl sm:w-full sm:mx-4 sm:h-auto">
               <button
                 onClick={closeModal}
-                className="absolute right-4 top-4 text-black text-2xl font-bold"
+                className="absolute right-4 top-4 text-white sm:text-black text-4xl font-bold bg-gray-800 sm:bg-gray-200 rounded-full w-12 h-12 sm:w-16 sm:h-16 flex items-center justify-center hover:bg-gray-700 sm:hover:bg-gray-300 z-30"
               >
                 &times;
+              </button>
+              {/* Download Button (Mobile Only) */}
+              <button
+                onClick={() => downloadImage(selectedDog)}
+                className="absolute right-4 top-20 text-white sm:text-black text-4xl font-bold bg-gray-800 sm:bg-gray-200 rounded-full w-12 h-12 sm:w-16 sm:h-16 flex items-center justify-center hover:bg-gray-700 sm:hover:bg-gray-300 z-30 block sm:hidden"
+              >
+                &#8681; {/* Unicode for download icon */}
               </button>
               <img
                 src={selectedDog}
                 alt="Perrito ampliado"
-                className="w-full h-[90vh] object-contain mx-auto"
+                className="w-full h-full object-contain mx-auto"
               />
             </div>
           </div>
