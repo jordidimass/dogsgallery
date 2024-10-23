@@ -1,1 +1,1 @@
-this website was made in 10 minutes
+random dogs image generator
