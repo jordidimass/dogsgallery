@@ -3,6 +3,7 @@ import axios from 'axios';
 import { Dialog } from '@headlessui/react';
 import InfiniteScroll from 'react-infinite-scroll-component';
 import 'tailwindcss/tailwind.css';
+import BlurFade from '../src/components/ui/blur-fade';
 
 export default function Home() {
   const [dogs, setDogs] = useState([]);
@@ -43,21 +44,22 @@ export default function Home() {
   return (
     <div className="font-sans text-center">
       <main className="p-4">
-      <InfiniteScroll
-        dataLength={dogs.length}
-        next={fetchDogs}
-        hasMore={true}
-        loader={<p>Cargando más imágenes de perritos...</p>}
-        className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4"
-      >
+        <InfiniteScroll
+          dataLength={dogs.length}
+          next={fetchDogs}
+          hasMore={true}
+          loader={<p>Cargando más imágenes de perritos...</p>}
+          className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4"
+        >
           {dogs.map((dog, index) => (
-            <img
-              key={index}
-              src={dog}
-              alt="Perrito"
-              className="w-full h-48 object-cover rounded-lg shadow-md cursor-pointer"
-              onClick={() => openModal(dog)}
-            />
+            <BlurFade key={index} delay={index * 0.05} duration={0.2}>
+              <img
+                src={dog}
+                alt="Perrito"
+                className="w-full h-48 object-cover rounded-lg shadow-md cursor-pointer"
+                onClick={() => openModal(dog)}
+              />
+            </BlurFade>
           ))}
         </InfiniteScroll>
       </main>
