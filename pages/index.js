@@ -42,7 +42,9 @@ export default function Home() {
   }, []);
 
   const closeModal = useCallback((e) => {
-    e?.preventDefault();
+    if (e && typeof e.preventDefault === 'function') {
+      e.preventDefault();
+    }
     setIsOpen(false);
     setTimeout(() => {
       setSelectedAnimal(null);
@@ -89,6 +91,8 @@ export default function Home() {
             className="fixed inset-0 bg-black/50 backdrop-blur-sm" 
             aria-hidden="true" 
             onClick={(e) => closeModal(e)}
+            role="button"
+            tabIndex={0}
           />
           <div className="fixed inset-0 flex items-center justify-center">
             <div className="relative w-full h-full">
@@ -101,7 +105,7 @@ export default function Home() {
               <img
                 src={selectedAnimal}
                 alt="Animal ampliado"
-                className="w-full h-full object-contain"
+                className="w-full h-full object-contain p-4"
                 onClick={(e) => e.stopPropagation()}
               />
             </div>
