@@ -10,29 +10,45 @@ export default function Home() {
   const [loading, setLoading] = useState(true);
   const [selectedAnimal, setSelectedAnimal] = useState(null);
   const [isOpen, setIsOpen] = useState(false);
+  const [filter, setFilter] = useState('all'); // 'all', 'dogs', 'cats'
 
   const fetchAnimals = useCallback(async () => {
     setLoading(true);
     try {
-      const dogsResponse = await axios.get('https://dog.ceo/api/breeds/image/random/10');
-      const catsResponse = await axios.get('https://api.thecatapi.com/v1/images/search?limit=10');
-
-      const newDogs = dogsResponse.data.message;
-      const newCats = catsResponse.data.map(cat => cat.url);
+      let newAnimals = [];
       
-      // Combine and shuffle only the new animals
-      const newAnimals = [...newDogs, ...newCats].sort(() => Math.random() - 0.5);
+      if (filter === 'all' || filter === 'dogs') {
+        const dogsResponse = await axios.get('https://dog.ceo/api/breeds/image/random/10');
+        const newDogs = dogsResponse.data.message.map(url => ({ url, type: 'dog' }));
+        newAnimals = [...newAnimals, ...newDogs];
+      }
+      
+      if (filter === 'all' || filter === 'cats') {
+        const catsResponse = await axios.get('https://api.thecatapi.com/v1/images/search?limit=10');
+        const newCats = catsResponse.data.map(cat => ({ url: cat.url, type: 'cat' }));
+        newAnimals = [...newAnimals, ...newCats];
+      }
+      
+      // Shuffle the new animals
+      newAnimals = newAnimals.sort(() => Math.random() - 0.5);
       
       setCombinedAnimals(prev => [...prev, ...newAnimals]);
     } catch (error) {
       console.error('Error fetching animals:', error);
     }
     setLoading(false);
-  }, []);
+  }, [filter]);
 
   useEffect(() => {
     fetchAnimals();
   }, [fetchAnimals]);
+
+  const handleFilterChange = useCallback((newFilter) => {
+    if (newFilter !== filter) {
+      setFilter(newFilter);
+      setCombinedAnimals([]); // Clear current animals when filter changes
+    }
+  }, [filter]);
 
   const openModal = useCallback((animal, e) => {
     e?.preventDefault();
@@ -54,6 +70,29 @@ export default function Home() {
 
   return (
     <div className="font-sans text-center">
+      {/* Filter Buttons */}
+      <div className="sticky top-0 bg-black/70 backdrop-blur-lg shadow-lg z-40 py-4">
+        <div className="flex justify-center gap-1">
+          {[
+            { key: 'all', label: 'Todos' },
+            { key: 'dogs', label: 'Perritos' },
+            { key: 'cats', label: 'Gatitos' }
+          ].map(({ key, label }) => (
+            <button
+              key={key}
+              onClick={() => handleFilterChange(key)}
+              className={`px-4 py-2 text-sm font-medium transition-all duration-200 ${
+                filter === key
+                  ? 'text-white border-b-2 border-white'
+                  : 'text-gray-300 hover:text-white/90'
+              }`}
+            >
+              {label}
+            </button>
+          ))}
+        </div>
+      </div>
+      
       <main className="p-4">
         <InfiniteScroll
           dataLength={combinedAnimals.length}
@@ -64,17 +103,17 @@ export default function Home() {
         >
           {combinedAnimals.map((animal, index) => (
             <BlurFade 
-              key={`${animal}-${index}`} 
+              key={`${animal.url}-${index}`} 
               delay={index * 0.02}
               duration={0.1}
               blur="4px"
               yOffset={4}
             >
               <img
-                src={animal}
-                alt="Animal"
+                src={animal.url}
+                alt={animal.type === 'dog' ? 'Perrito' : 'Gatito'}
                 className="w-full h-48 object-cover rounded-lg shadow-md cursor-pointer"
-                onClick={(e) => openModal(animal, e)}
+                onClick={(e) => openModal(animal.url, e)}
               />
             </BlurFade>
           ))}
