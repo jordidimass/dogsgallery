@@ -1,9 +1,8 @@
-import React, { useState, useEffect, useCallback } from 'react';
-import axios from 'axios';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
+import Image from 'next/image';
 import { Dialog } from '@headlessui/react';
 import InfiniteScroll from 'react-infinite-scroll-component';
-import 'tailwindcss/tailwind.css';
-import BlurFade from '../src/components/ui/blur-fade'; // Implied import for BlurFade component
+import BlurFade from '@/components/ui/blur-fade';
 
 export default function Home() {
   const [combinedAnimals, setCombinedAnimals] = useState([]); // New state for combined animals
@@ -11,42 +10,57 @@ export default function Home() {
   const [selectedAnimal, setSelectedAnimal] = useState(null);
   const [isOpen, setIsOpen] = useState(false);
   const [filter, setFilter] = useState('all'); // 'all', 'dogs', 'cats'
+  const requestIdRef = useRef(0);
+  const prefillAttemptsRef = useRef(0);
+  const isAnimatedUrl = (url) => /\.gif(\?|$)/i.test(url || "");
 
   const fetchAnimals = useCallback(async () => {
+    const currentId = ++requestIdRef.current;
     setLoading(true);
     try {
-      let newAnimals = [];
-      
-      if (filter === 'all' || filter === 'dogs') {
-        const dogsResponse = await axios.get('https://dog.ceo/api/breeds/image/random/10');
-        const newDogs = dogsResponse.data.message.map(url => ({ url, type: 'dog' }));
-        newAnimals = [...newAnimals, ...newDogs];
-      }
-      
-      if (filter === 'all' || filter === 'cats') {
-        const catsResponse = await axios.get('https://api.thecatapi.com/v1/images/search?limit=10');
-        const newCats = catsResponse.data.map(cat => ({ url: cat.url, type: 'cat' }));
-        newAnimals = [...newAnimals, ...newCats];
-      }
-      
-      // Shuffle the new animals
-      newAnimals = newAnimals.sort(() => Math.random() - 0.5);
-      
-      setCombinedAnimals(prev => [...prev, ...newAnimals]);
+      const dogsPromise = (filter === 'all' || filter === 'dogs')
+        ? fetch('https://dog.ceo/api/breeds/image/random/10').then((r) => r.json())
+        : Promise.resolve(null);
+      const catsPromise = (filter === 'all' || filter === 'cats')
+        ? fetch('https://api.thecatapi.com/v1/images/search?limit=10').then((r) => r.json())
+        : Promise.resolve(null);
+
+      const [dogsData, catsData] = await Promise.all([dogsPromise, catsPromise]);
+
+      const newDogs = dogsData?.message ? dogsData.message.map((url) => ({ url, type: 'dog' })) : [];
+      const newCats = Array.isArray(catsData) ? catsData.map((cat) => ({ url: cat.url, type: 'cat' })) : [];
+      const newAnimals = [...newDogs, ...newCats].sort(() => Math.random() - 0.5);
+
+      if (currentId !== requestIdRef.current) return; // stale response, do not update
+      setCombinedAnimals((prev) => [...prev, ...newAnimals]);
     } catch (error) {
       console.error('Error fetching animals:', error);
+    } finally {
+      if (currentId === requestIdRef.current) setLoading(false);
     }
-    setLoading(false);
   }, [filter]);
 
   useEffect(() => {
     fetchAnimals();
   }, [fetchAnimals]);
 
+  // Prefill more items after load until the page becomes scrollable,
+  // capped to avoid excessive requests on tall viewports.
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    const doc = document.documentElement;
+    const isScrollable = doc.scrollHeight > window.innerHeight + 1;
+    if (!loading && !isScrollable && prefillAttemptsRef.current < 5) {
+      prefillAttemptsRef.current += 1;
+      fetchAnimals();
+    }
+  }, [combinedAnimals.length, loading, fetchAnimals]);
+
   const handleFilterChange = useCallback((newFilter) => {
     if (newFilter !== filter) {
       setFilter(newFilter);
       setCombinedAnimals([]); // Clear current animals when filter changes
+      prefillAttemptsRef.current = 0; // reset prefill attempts per filter
     }
   }, [filter]);
 
@@ -60,6 +74,9 @@ export default function Home() {
   const closeModal = useCallback((e) => {
     if (e && typeof e.preventDefault === 'function') {
       e.preventDefault();
+    }
+    if (e && typeof e.stopPropagation === 'function') {
+      e.stopPropagation();
     }
     setIsOpen(false);
     setTimeout(() => {
@@ -95,6 +112,7 @@ export default function Home() {
       
       <main className="p-4">
         <InfiniteScroll
+          key={filter}
           dataLength={combinedAnimals.length}
           next={fetchAnimals}
           hasMore={true}
@@ -109,45 +127,52 @@ export default function Home() {
               blur="4px"
               yOffset={4}
             >
-              <img
-                src={animal.url}
-                alt={animal.type === 'dog' ? 'Perrito' : 'Gatito'}
-                className="w-full h-48 object-cover rounded-lg shadow-md cursor-pointer"
-                onClick={(e) => openModal(animal.url, e)}
-              />
+              <div className="relative w-full h-48">
+                <Image
+                  src={animal.url}
+                  alt={animal.type === 'dog' ? 'Perrito' : 'Gatito'}
+                  fill
+                  sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 25vw"
+                  className="object-cover rounded-lg shadow-md cursor-pointer"
+                  onClick={(e) => openModal(animal, e)}
+                  unoptimized={animal.type === 'cat' || isAnimatedUrl(animal.url)}
+                />
+              </div>
             </BlurFade>
           ))}
         </InfiniteScroll>
       </main>
 
       {selectedAnimal && (
-        <Dialog 
-          open={isOpen} 
-          onClose={closeModal} 
+        <Dialog
+          open={isOpen}
+          onClose={closeModal}
           className="fixed inset-0 z-50"
         >
-          <div 
-            className="fixed inset-0 bg-black/50 backdrop-blur-sm" 
-            aria-hidden="true" 
+          <div
+            className="fixed inset-0 bg-black/50 backdrop-blur-sm"
+            aria-hidden="true"
             onClick={(e) => closeModal(e)}
-            role="button"
-            tabIndex={0}
           />
-          <div className="fixed inset-0 flex items-center justify-center">
-            <div className="relative w-full h-full">
+          <div className="fixed inset-0 flex items-center justify-center" onClick={(e) => closeModal(e)}>
+            <Dialog.Panel className="relative w-[calc(100vw-2rem)] h-[calc(100vh-2rem)]" onClick={(e) => e.stopPropagation()}>
               <button
                 onClick={(e) => closeModal(e)}
                 className="absolute right-4 top-4 text-white text-4xl font-bold bg-black/50 rounded-full w-12 h-12 flex items-center justify-center hover:bg-black/70 z-50"
               >
                 &times;
               </button>
-              <img
-                src={selectedAnimal}
-                alt="Animal ampliado"
-                className="w-full h-full object-contain p-4"
-                onClick={(e) => e.stopPropagation()}
-              />
-            </div>
+              <div className="relative w-full h-full">
+                <Image
+                  src={selectedAnimal.url}
+                  alt="Animal ampliado"
+                  fill
+                  className="object-contain"
+                  priority
+                  unoptimized
+                />
+              </div>
+            </Dialog.Panel>
           </div>
         </Dialog>
       )}
