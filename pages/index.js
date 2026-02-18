@@ -3,6 +3,8 @@ import Image from 'next/image';
 import { Dialog } from '@headlessui/react';
 import InfiniteScroll from 'react-infinite-scroll-component';
 import BlurFade from '@/components/ui/blur-fade';
+import { Button } from '@/components/ui/button';
+import { X } from 'lucide-react';
 
 export default function Home() {
   const [combinedAnimals, setCombinedAnimals] = useState([]);
@@ -92,8 +94,10 @@ export default function Home() {
             { key: 'dogs', label: 'Perritos' },
             { key: 'cats', label: 'Gatitos' }
           ].map(({ key, label }) => (
-            <button
+            <Button
               key={key}
+              type="button"
+              variant="ghost"
               onClick={() => handleFilterChange(key)}
               className={`px-4 py-2 text-sm font-medium transition-all duration-500 rounded-full border border-white/10 ${
                 filter === key
@@ -102,15 +106,13 @@ export default function Home() {
               }`}
             >
               {label}
-            </button>
+            </Button>
           ))}
         </div>
       </div>
       
       <main className="p-4 sm:p-6 lg:p-10">
         <div className="mb-6 text-center">
-          <h1 className="text-2xl sm:text-3xl font-semibold tracking-tight">Galeria infinita</h1>
-          <p className="text-sm text-white/70">Un flujo continuo con filtros instantaneos y un look cinematografico.</p>
         </div>
         <InfiniteScroll
           key={filter}
@@ -147,25 +149,34 @@ export default function Home() {
       </main>
 
       {selectedAnimal && (
-        <Dialog
-          open={isOpen}
-          onClose={closeModal}
-          className="fixed inset-0 z-50"
-        >
+        <Dialog open={isOpen} onClose={closeModal} className="fixed inset-0 z-50">
           <div
-            className="fixed inset-0 bg-black/70 backdrop-blur-sm"
+            className="fixed inset-0 bg-black/70 backdrop-blur"
             aria-hidden="true"
-            onClick={(e) => closeModal(e)}
+            onClick={closeModal}
           />
-          <div className="fixed inset-0 flex items-center justify-center" onClick={(e) => closeModal(e)}>
-            <Dialog.Panel className="relative w-[calc(100vw-2rem)] h-[calc(100vh-2rem)]" onClick={(e) => e.stopPropagation()}>
-              <button
-                onClick={(e) => closeModal(e)}
-                className="absolute right-4 top-4 text-white text-4xl font-bold bg-black/50 rounded-full w-12 h-12 flex items-center justify-center hover:bg-black/70 z-50"
+          <div className="fixed inset-0 flex items-center justify-center px-4 py-6">
+            <Dialog.Panel
+              className="relative w-full"
+              onClick={closeModal}
+            >
+              <Button
+                type="button"
+                variant="ghost"
+                size="icon"
+                aria-label="Cerrar"
+                className="absolute right-6 top-6 border border-white/30 bg-black/50 text-white hover:bg-black/70"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  closeModal(e);
+                }}
               >
-                &times;
-              </button>
-              <div className="relative w-full h-full">
+                <X className="h-4 w-4" />
+              </Button>
+              <div
+                className="relative mx-auto h-[calc(100vh-4rem)] w-full max-w-6xl"
+                onClick={(e) => e.stopPropagation()}
+              >
                 <Image
                   src={selectedAnimal.url}
                   alt="Animal ampliado"
