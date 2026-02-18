@@ -155,10 +155,10 @@ export default function Home() {
             aria-hidden="true"
             onClick={closeModal}
           />
-          <div className="fixed inset-0 flex items-center justify-center px-4 py-6">
+          <div className="fixed inset-0 flex items-center justify-center px-4 py-6" onClick={closeModal}>
             <Dialog.Panel
               className="relative w-full"
-              onClick={closeModal}
+              onClick={(e) => e.stopPropagation()}
             >
               <Button
                 type="button"
