@@ -9,6 +9,11 @@ module.exports = {
   ],
   theme: {
 		extend: {
+		fontFamily: {
+			sans: ['var(--font-geist-sans)', 'Arial', 'Helvetica', 'sans-serif'],
+			mono: ['"Geist Mono"', 'ui-monospace', 'SFMono-Regular', 'Menlo', 'Monaco', 'Consolas', 'monospace'],
+			display: ['var(--font-geist-sans)', 'Arial', 'Helvetica', 'sans-serif'],
+		},
 		borderRadius: {
   			lg: 'var(--radius)',
   			md: 'calc(var(--radius) - 2px)',
