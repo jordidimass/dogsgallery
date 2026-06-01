@@ -11,6 +11,13 @@ const getJson = async (url) => {
   return response.json();
 };
 
+const getOptimizedImageUrl = (url, width = 750, quality = 60) => {
+  if (typeof url !== 'string' || /\.gif(\?|$)/i.test(url)) {
+    return url;
+  }
+  return `/_next/image?url=${encodeURIComponent(url)}&w=${width}&q=${quality}`;
+};
+
 const getAnimalBatch = async (filter, limit = 10) => {
   const allLimit = Math.max(2, Math.ceil(limit / 2));
   const dogsPromise = (filter === 'all' || filter === 'dogs')
@@ -153,14 +160,24 @@ export default function Home({ initialAnimals = [] }) {
             return (
               <div
                 key={`${animal.url}-${index}`}
-                className="group relative h-56 w-full cursor-zoom-in overflow-hidden rounded-2xl border border-white/10 bg-gradient-to-br from-white/5 via-white/0 to-white/5 sm:h-64"
+                className="group relative h-auto w-full cursor-zoom-in overflow-hidden rounded-2xl border border-white/10 bg-gradient-to-br from-white/5 via-white/0 to-white/5 sm:h-64"
               >
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img
+                  src={getOptimizedImageUrl(animal.url)}
+                  alt={animal.type === 'dog' ? 'Perrito' : 'Gatito'}
+                  className="block h-auto w-full sm:hidden"
+                  decoding="async"
+                  fetchPriority={isLikelyInitialLcp ? 'high' : 'auto'}
+                  loading={isLikelyInitialLcp ? 'eager' : 'lazy'}
+                  onClick={(e) => openModal(animal, e)}
+                />
                 <Image
                   src={animal.url}
                   alt={animal.type === 'dog' ? 'Perrito' : 'Gatito'}
                   fill
                   sizes="(max-width: 640px) calc(100vw - 32px), (max-width: 1024px) calc(50vw - 24px), calc(25vw - 28px)"
-                  className="object-cover transition duration-700 ease-out group-hover:scale-105"
+                  className="hidden object-cover transition duration-700 ease-out group-hover:scale-105 sm:block"
                   onClick={(e) => openModal(animal, e)}
                   priority={isLikelyInitialLcp}
                   fetchPriority={isLikelyInitialLcp ? 'high' : 'auto'}
