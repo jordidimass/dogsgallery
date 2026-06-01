@@ -1,10 +1,18 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import Image from 'next/image';
-import { Dialog } from '@headlessui/react';
+import { Dialog, DialogPanel } from '@headlessui/react';
 import InfiniteScroll from 'react-infinite-scroll-component';
 import BlurFade from '@/components/ui/blur-fade';
 import { Button } from '@/components/ui/button';
 import { X } from 'lucide-react';
+
+const getJson = async (url) => {
+  const response = await fetch(url);
+  if (!response.ok) {
+    throw new Error(`Request failed: ${response.status}`);
+  }
+  return response.json();
+};
 
 export default function Home() {
   const [combinedAnimals, setCombinedAnimals] = useState([]);
@@ -21,10 +29,10 @@ export default function Home() {
     setLoading(true);
     try {
       const dogsPromise = (filter === 'all' || filter === 'dogs')
-        ? fetch('https://dog.ceo/api/breeds/image/random/10').then((r) => r.json())
+        ? getJson('https://dog.ceo/api/breeds/image/random/10')
         : Promise.resolve(null);
       const catsPromise = (filter === 'all' || filter === 'cats')
-        ? fetch('https://api.thecatapi.com/v1/images/search?limit=10').then((r) => r.json())
+        ? getJson('https://api.thecatapi.com/v1/images/search?limit=10')
         : Promise.resolve(null);
 
       const [dogsData, catsData] = await Promise.all([dogsPromise, catsPromise]);
@@ -47,6 +55,15 @@ export default function Home() {
   }, [fetchAnimals]);
 
   useEffect(() => {
+    if (!isOpen) return undefined;
+    const originalOverflow = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+    return () => {
+      document.body.style.overflow = originalOverflow;
+    };
+  }, [isOpen]);
+
+  useEffect(() => {
     if (typeof window === 'undefined') return;
     const doc = document.documentElement;
     const isScrollable = doc.scrollHeight > window.innerHeight + 1;
@@ -58,6 +75,7 @@ export default function Home() {
 
   const handleFilterChange = useCallback((newFilter) => {
     if (newFilter !== filter) {
+      requestIdRef.current += 1;
       setFilter(newFilter);
       setCombinedAnimals([]);
       prefillAttemptsRef.current = 0;
@@ -68,21 +86,11 @@ export default function Home() {
     e?.preventDefault();
     setSelectedAnimal(animal);
     setIsOpen(true);
-    document.body.style.overflow = 'hidden';
   }, []);
 
-  const closeModal = useCallback((e) => {
-    if (e && typeof e.preventDefault === 'function') {
-      e.preventDefault();
-    }
-    if (e && typeof e.stopPropagation === 'function') {
-      e.stopPropagation();
-    }
+  const closeModal = useCallback(() => {
     setIsOpen(false);
-    setTimeout(() => {
-      setSelectedAnimal(null);
-      document.body.style.overflow = 'unset';
-    }, 200);
+    setSelectedAnimal(null);
   }, []);
 
   return (
@@ -150,33 +158,20 @@ export default function Home() {
 
       {selectedAnimal && (
         <Dialog open={isOpen} onClose={closeModal} className="fixed inset-0 z-50">
-          <div
-            className="fixed inset-0 bg-black/70 backdrop-blur"
-            aria-hidden="true"
-            onClick={closeModal}
-          />
+          <div className="fixed inset-0 bg-black/70 backdrop-blur-sm transition-opacity duration-300" aria-hidden="true" />
           <div className="fixed inset-0 flex items-center justify-center px-4 py-6" onClick={closeModal}>
-            <Dialog.Panel
-              className="relative w-full"
-              onClick={(e) => e.stopPropagation()}
-            >
+            <DialogPanel className="relative w-full max-w-6xl" onClick={(e) => e.stopPropagation()}>
               <Button
                 type="button"
                 variant="ghost"
                 size="icon"
                 aria-label="Cerrar"
-                className="absolute right-6 top-6 border border-white/30 bg-black/50 text-white hover:bg-black/70"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  closeModal(e);
-                }}
+                className="absolute right-4 top-4 z-10 border border-white/30 bg-black/50 text-white hover:bg-white/10 transition-colors duration-200 rounded-lg"
+                onClick={closeModal}
               >
-                <X className="h-4 w-4" />
+                <X className="h-5 w-5" />
               </Button>
-              <div
-                className="relative mx-auto h-[calc(100vh-4rem)] w-full max-w-6xl"
-                onClick={(e) => e.stopPropagation()}
-              >
+              <div className="relative mx-auto h-[calc(100vh-2rem)] w-full">
                 <Image
                   src={selectedAnimal.url}
                   alt="Animal ampliado"
@@ -186,7 +181,7 @@ export default function Home() {
                   unoptimized
                 />
               </div>
-            </Dialog.Panel>
+            </DialogPanel>
           </div>
         </Dialog>
       )}
